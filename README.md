@@ -1,2 +1,2 @@
 # theGrint
-Techincal assesment API fro selling and posting golf acessories
+Techincal assesment API for selling and posting golf acessories
