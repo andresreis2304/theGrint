@@ -14,17 +14,17 @@ class StoreAnuncioRequest extends FormRequest
     public function rules(): array
     {
         $allowed = [
-            'new', 'used', 'refurbished', 'like new',
-            'nuevo', 'usado', 'restaurado', 'como nuevo',     // alias -> restaturado
+            'new', 'used', 'refurbished', 'like_new',
+            'nuevo', 'usado', 'restaurado', 'como_nuevo',
         ];
 
         return [
             // Title: only A–Z, a–z and spaces
-            'title'       => ['required','regex:/^[A-Za-z ]+$/','max:500'],
-            'price'       => ['required','numeric','min:0'],
-            'condition'   => ['required','in:new,used,refurbished,like_new'],
+            'title' => ['required','regex:/^[A-Za-z ]+$/','max:500'],
+            'price' => ['required','numeric','min:0'],
+            'condition' => ['required','in:new,used,refurbished,like_new'],
             'description' => ['nullable','string'],
-            'end_date'    => ['required','date','after:now'],
+            'end_date' => ['required','date','after:now'],
             'category_id' => ['required','integer','exists:categoria,categoria_id'],
         ];
     }

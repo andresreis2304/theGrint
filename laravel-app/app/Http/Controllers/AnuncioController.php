@@ -20,12 +20,12 @@ class AnuncioController extends Controller
         }
 
         $data = $request->validated();
-        // Map API "condition" (English) to DB "estado" (Spanish ENUM)
+        // Map API "condition" (English) to DB "estado"
         $conditionToEstado = [
             'new' => 'nuevo',
             'used' => 'usado',
-            'refurbished' => 'reacondicionado',
-            'like new' => 'como nuevo',
+            'refurbished' => 'restaurado',
+            'like_new' => 'como_nuevo',
         ];
 
         $estado = $conditionToEstado[$data['condition']] ?? $data['condition'];

@@ -13,15 +13,15 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'first_name' => ['required','string','max:100'],
-            'last_name'  => ['required','string','max:100'],
-            'email'      => ['required','email:rfc,dns','max:255','unique:usuario,email'],
-            'password'   => ['required','confirmed', Password::min(8)->letters()->numbers()],
+            'last_name' => ['required','string','max:100'],
+            'email' => ['required','email:rfc,dns','max:255','unique:usuario,email'],
+            'password' => ['required','confirmed', Password::min(8)->letters()->numbers()],
         ]);
 
         $user = Usuario::create([
-            'nombre'   => $data['first_name'],
+            'nombre' => $data['first_name'],
             'apellido' => $data['last_name'],
-            'email'    => strtolower($data['email']),
+            'email' => strtolower($data['email']),
             'password' => Hash::make($data['password']),
         ]);
 
@@ -29,12 +29,12 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Registered',
-            'token'   => $token,
-            'user'    => [
-                'id'         => $user->usuario_id,
+            'token' => $token,
+            'user' => [
+                'id' => $user->usuario_id,
                 'first_name' => $user->nombre,
-                'last_name'  => $user->apellido,
-                'email'      => $user->email,
+                'last_name' => $user->apellido,
+                'email' => $user->email,
             ],
         ], 201);
     }
@@ -42,7 +42,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate([
-            'email'    => ['required','email:rfc,dns'],
+            'email' => ['required','email:rfc,dns'],
             'password' => ['required','string'],
         ]);
 
@@ -57,12 +57,12 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged in',
-            'token'   => $token,
-            'user'    => [
-                'id'         => $user->usuario_id,
+            'token' => $token,
+            'user' => [
+                'id' => $user->usuario_id,
                 'first_name' => $user->nombre,
-                'last_name'  => $user->apellido,
-                'email'      => $user->email,
+                'last_name' => $user->apellido,
+                'email' => $user->email,
             ],
         ]);
     }

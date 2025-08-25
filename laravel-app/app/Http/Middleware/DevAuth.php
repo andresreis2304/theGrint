@@ -28,7 +28,6 @@ class DevAuth
 
         // Attach the model so $request->user() returns your Usuario
         $request->setUserResolver(fn () => $user);
-
         return $next($request);
     }
 }
