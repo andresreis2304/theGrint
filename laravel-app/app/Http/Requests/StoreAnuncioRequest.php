@@ -22,7 +22,10 @@ class StoreAnuncioRequest extends FormRequest
             // Title: only A–Z, a–z and spaces
             'title' => ['required','regex:/^[A-Za-z ]+$/','max:500'],
             'price' => ['required','numeric','min:0'],
-            'condition' => ['required','in:new,used,refurbished,like_new'],
+            'condition' => ['required','string', Rule::in([
+                'new','used','refurbished','like_new',
+                'nuevo','usado','reacondicionado','restaurado','como_nuevo','como nuevo',
+            ])],
             'description' => ['nullable','string'],
             'end_date' => ['required','date','after:now'],
             'category_id' => ['required','integer','exists:categoria,categoria_id'],
