@@ -8,6 +8,8 @@ use App\Models\Anuncio;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Services\AdAiService;
+
 
 class AnuncioController extends Controller
 {
@@ -40,6 +42,15 @@ class AnuncioController extends Controller
             'fecha_fin'   => \Illuminate\Support\Carbon::parse($data['end_date']),
             'is_canceled' => 0,
         ]);
+
+        try {
+            if (config('services.openai.key')) {
+                app(AdAiService::class)->enrichAndSave($ad);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('AI enrich failed: '.$e->getMessage());
+        }
+        $ad->refresh();   // <— pull ai_valuation / ai_estimated_price from DB
 
         return (new AnuncioResource($ad))
             ->response()

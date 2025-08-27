@@ -36,6 +36,8 @@ class AnuncioResource extends JsonResource
             'condition' => $estadoToCondition[$this->estado] ?? $this->estado,
             'description' => $this->descripcion ?? '',
             'created_at' => optional($this->created_at)->format('Y-m-d H:i:s'),
+            'ai_valuation' => $this->ai_valuation,
+            'ai_estimated_price' => $this->ai_estimated_price,
         ];
     }
 }

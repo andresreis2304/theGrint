@@ -13,7 +13,7 @@ class Anuncio extends Model
     protected $fillable = [
         'usuario_id', 'categoria_id',
         'titulo', 'precio', 'estado', 'descripcion', 'fecha_fin',
-        'is_canceled',
+        'is_canceled', 'ai_valuation','ai_estimated_price',
     ];
 
     protected $casts = [
@@ -21,6 +21,7 @@ class Anuncio extends Model
         'is_canceled' => 'boolean',
         'fecha_fin' => 'datetime',
         'created_at' => 'datetime',
+        'ai_estimated_price' => 'float',
     ];
 
     public function usuario()
