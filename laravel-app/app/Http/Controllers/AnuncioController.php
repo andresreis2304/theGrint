@@ -13,16 +13,15 @@ use App\Services\AdAiService;
 
 class AnuncioController extends Controller
 {
-    //create AD (POST /api/ads)
     public function store(StoreAnuncioRequest $request)
     {
-        $user = $request->user(); // set by DevAuth middleware
+        $user = $request->user();
         if (!$user instanceof Usuario) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $data = $request->validated();
-        // Map API "condition" (English) to DB "estado"
+
         $conditionToEstado = [
             'new' => 'nuevo',
             'used' => 'usado',
@@ -37,7 +36,7 @@ class AnuncioController extends Controller
             'categoria_id'=> $data['category_id'],
             'titulo' => $data['title'],
             'precio' => $data['price'],
-            'estado' => $estado,   // "condition" per spec, stored in 'estado'
+            'estado' => $estado, 
             'descripcion' => $data['description'] ?? null,
             'fecha_fin'   => \Illuminate\Support\Carbon::parse($data['end_date']),
             'is_canceled' => 0,
@@ -50,14 +49,13 @@ class AnuncioController extends Controller
         } catch (\Throwable $e) {
             \Log::warning('AI enrich failed: '.$e->getMessage());
         }
-        $ad->refresh();   // <— pull ai_valuation / ai_estimated_price from DB
+        $ad->refresh(); 
 
         return (new AnuncioResource($ad))
             ->response()
             ->setStatusCode(201);
     }
 
-    //delete AD (DELETE /api/ads/{id})
     public function destroy(Request $request, int $id)
     {
         $user = $request->user();
@@ -74,7 +72,6 @@ class AnuncioController extends Controller
             return response()->json(['message' => 'Forbidden: not your ad'], 403);
         }
 
-        // Soft cancel by flagging (preferred so history remains)
         $ad->is_canceled = true;
         $ad->save();
 
@@ -84,17 +81,16 @@ class AnuncioController extends Controller
         ], 200);
     }
 
-    // 3) list ADS GET /api/ads needs to be public
     public function index(Request $request)
     {
         $data = $request->validate([
-        'price_min'     => ['nullable','numeric','min:0'],
-        'price_max'     => ['nullable','numeric','gte:price_min'],
-        'category_id'   => ['nullable','string'],
-        'estado'        => ['nullable','string'],
-        'q'             => ['nullable','string'],
+        'price_min' => ['nullable','numeric','min:0'],
+        'price_max' => ['nullable','numeric','gte:price_min'],
+        'category_id' => ['nullable','string'],
+        'estado' => ['nullable','string'],
+        'q' => ['nullable','string'],
         'mostrar_todos' => ['nullable','boolean'],
-        'per_page'      => ['nullable','integer','min:1','max:100'],
+        'per_page' => ['nullable','integer','min:1','max:100'],
         ]);
 
         $estadoMap = ['new' => 'nuevo', 'nuevo' => 'nuevo', 
@@ -104,7 +100,6 @@ class AnuncioController extends Controller
 
         $mostrarTodos = $request->boolean('mostrar_todos');
 
-        // show only active, not canceled, and not expired
         $ads = Anuncio::with(['usuario', 'categoria']);
 
         if(!$mostrarTodos){
@@ -136,12 +131,11 @@ class AnuncioController extends Controller
 
 
         if ($mostrarTodos) {
-            $ads->orderBy('precio', 'desc');          // mostrar todos -> precio desc
+            $ads->orderBy('precio', 'desc'); 
         } else {
-            $ads->orderBy('created_at', 'asc');       // activos -> más antiguo a más nuevo
+            $ads->orderBy('created_at', 'asc'); 
         }
 
-        // Paginación
         $perPage = (int)($data['per_page'] ?? 10);
         $perPage = max(1, min($perPage, 100));
 

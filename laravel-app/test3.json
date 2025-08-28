@@ -1,0 +1,282 @@
+{
+  "info": {
+    "name": "GolfAPI Full Flow (Rory)",
+    "_postman_id": "c2b1e7f0-1b23-4f77-9a9a-cccccccccccc",
+    "description": "Third end-to-end flow with a different user and two ads (Driver + Putter). Saves token and both ad IDs automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:9000" },
+    { "key": "email", "value": "rory.mcilroy@gmail.com" },
+    { "key": "password", "value": "UltraSecret123" },
+    { "key": "token", "value": "" },
+    { "key": "ad_id_driver", "value": "" },
+    { "key": "ad_id_putter", "value": "" },
+    { "key": "category_id", "value": "6" }
+  ],
+  "item": [
+    {
+      "name": "Register (Rory)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Rory\",\n  \"last_name\": \"McIlroy\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password_confirmation\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Register returns 200/201 or 422 if already exists', function () {",
+              "  pm.expect([200,201,422]).to.include(pm.response.code);",
+              "});",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+              "if (token) pm.collectionVariables.set('token', token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login (Rory)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+              "pm.test('Token present', function(){ pm.expect(!!token).to.be.true; });",
+              "pm.collectionVariables.set('token', token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Ad (Driver)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads", "host": ["{{base_url}}"], "path": ["api", "ads"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"TaylorMade Tour Driver\",\n  \"price\": 349.99,\n  \"condition\": \"like_new\",\n  \"description\": \"Forgiving head with mid launch, stock stiff shaft, headcover included.\",\n  \"end_date\": \"2030-12-31 23:59:59\",\n  \"category_id\": {{category_id}}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Create Driver returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const id = j.data?.ad_id || j.ad_id || j.id;",
+              "pm.collectionVariables.set('ad_id_driver', String(id || ''));",
+              "pm.test('Driver ad_id captured', function(){ pm.expect(pm.collectionVariables.get('ad_id_driver')).to.not.eql(''); });",
+              "if (j.data) { pm.expect(j.data).to.have.property('title'); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Ad (Putter)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads", "host": ["{{base_url}}"], "path": ["api", "ads"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Scotty Cameron Blade Putter\",\n  \"price\": 279.00,\n  \"condition\": \"used\",\n  \"description\": \"Classic blade with milled face, slight toe hang, brand grip installed.\",\n  \"end_date\": \"2030-12-31 23:59:59\",\n  \"category_id\": {{category_id}}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Create Putter returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const id = j.data?.ad_id || j.ad_id || j.id;",
+              "pm.collectionVariables.set('ad_id_putter', String(id || ''));",
+              "pm.test('Putter ad_id captured', function(){ pm.expect(pm.collectionVariables.get('ad_id_putter')).to.not.eql(''); });",
+              "if (j.data) { pm.expect(j.data).to.have.property('title'); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Ads (search Driver, like_new, paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ads?price_min=100&price_max=800&category_id={{category_id}}&estado=como_nuevo&q=Driver&per_page=5&mostrar_todos=false",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ads"],
+          "query": [
+            { "key": "price_min", "value": "100" },
+            { "key": "price_max", "value": "800" },
+            { "key": "category_id", "value": "{{category_id}}" },
+            { "key": "estado", "value": "como_nuevo" },
+            { "key": "q", "value": "Driver" },
+            { "key": "per_page", "value": "5" },
+            { "key": "mostrar_todos", "value": "0" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Get Ads (Driver) returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "pm.test('Has data array', function(){ pm.expect(j).to.have.property('data'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Ads (search Putter, any condition, paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ads?q=Putter&per_page=5&mostrar_todos=false&category_id={{category_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ads"],
+          "query": [
+            { "key": "q", "value": "Putter" },
+            { "key": "per_page", "value": "5" },
+            { "key": "mostrar_todos", "value": "0" },
+            { "key": "category_id", "value": "{{category_id}}" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Get Ads (Putter) returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "pm.test('Has data array', function(){ pm.expect(j).to.have.property('data'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Ad (Driver)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads/{{ad_id_driver}}", "host": ["{{base_url}}"], "path": ["api", "ads", "{{ad_id_driver}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Delete Driver returns 200', function () { pm.expect(pm.response.code).to.eql(200); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Ad (Putter)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads/{{ad_id_putter}}", "host": ["{{base_url}}"], "path": ["api", "ads", "{{ad_id_putter}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Delete Putter returns 200', function () { pm.expect(pm.response.code).to.eql(200); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout (Rory)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Logout returns 200/204', function () { pm.expect([200,204]).to.include(pm.response.code); });",
+              "pm.collectionVariables.unset('token');",
+              "pm.collectionVariables.unset('ad_id_driver');",
+              "pm.collectionVariables.unset('ad_id_putter');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

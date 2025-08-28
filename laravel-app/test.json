@@ -1,0 +1,192 @@
+{
+  "info": {
+    "name": "GolfAPI Full Flow",
+    "_postman_id": "4e9f37a8-1f1b-4a9b-9a9a-aaaaaaaaaaaa",
+    "description": "Register, Login, Logout, Create Ad, Get Ads, Delete Ad. Saves token and ad_id automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:9000" },
+    { "key": "email", "value": "tigerwoods@gmail.com" },
+    { "key": "password", "value": "Secret123" },
+    { "key": "token", "value": "" },
+    { "key": "ad_id", "value": "" },
+    { "key": "category_id", "value": "5" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Tiger\",\n  \"last_name\": \"Woods\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password_confirmation\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Register returns 200/201 or 422 if already exists', function () {",
+              "  pm.expect([200,201,422]).to.include(pm.response.code);",
+              "});",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+              "if (token) pm.collectionVariables.set('token', token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+              "pm.test('Token present', function(){ pm.expect(!!token).to.be.true; });",
+              "pm.collectionVariables.set('token', token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Ad",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads", "host": ["{{base_url}}"], "path": ["api", "ads"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Mizuno JPX Forged Irons\",\n  \"price\": 450.00,\n  \"condition\": \"used\",\n  \"description\": \"Set 5-PW, shafts steel stiff, very good condition.\",\n  \"end_date\": \"2030-12-31 23:59:59\",\n  \"category_id\": {{category_id}}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Create returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const id = j.data?.ad_id || j.ad_id || j.id;",
+              "pm.collectionVariables.set('ad_id', String(id || ''));",
+              "pm.test('ad_id captured', function(){ pm.expect(pm.collectionVariables.get('ad_id')).to.not.eql(''); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Ads (filters)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ads?price_min=40&price_max=1000&category_id={{category_id}}&estado=usado&q=irons&per_page=5&mostrar_todos=false",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ads"],
+          "query": [
+            { "key": "price_min", "value": "40" },
+            { "key": "price_max", "value": "1000" },
+            { "key": "category_id", "value": "{{category_id}}" },
+            { "key": "estado", "value": "usado" },
+            { "key": "q", "value": "irons" },
+            { "key": "per_page", "value": "5" },
+            { "key": "mostrar_todos", "value": "0" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Get Ads returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "pm.test('Has data array', function(){ pm.expect(j).to.have.property('data'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Ad",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads/{{ad_id}}", "host": ["{{base_url}}"], "path": ["api", "ads", "{{ad_id}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Delete returns 200', function () { pm.expect(pm.response.code).to.eql(200); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Logout returns 200/204', function () { pm.expect([200,204]).to.include(pm.response.code); });",
+              "pm.collectionVariables.unset('token');",
+              "pm.collectionVariables.unset('ad_id');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

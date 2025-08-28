@@ -10,7 +10,6 @@ return new class extends Migration {
             $table->string('email')->unique()->after('apellido');
             $table->string('password')->after('email');
             $table->rememberToken()->after('password');
-            // you already have created_at/updated_at per your screenshot
         });
     }
     public function down(): void {

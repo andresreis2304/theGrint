@@ -1,0 +1,196 @@
+{
+  "info": {
+    "name": "GolfAPI Full Flow",
+    "_postman_id": "b57a50b1-55c3-4c35-9b9b-bbbbbbbbbbbb",
+    "description": "Second end-to-end flow with a different user and ad. Saves token and ad_id automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:9000" },
+    { "key": "email", "value": "annika@gmail.com" },
+    { "key": "password", "value": "SuperSecret123" },
+    { "key": "token", "value": "" },
+    { "key": "ad_id", "value": "" },
+    { "key": "category_id", "value": "6" }
+  ],
+  "item": [
+    {
+      "name": "Register (Annika)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Annika\",\n  \"last_name\": \"Sorenstam\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"password_confirmation\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Register returns 200/201 or 422 if already exists', function () {",
+              "  pm.expect([200,201,422]).to.include(pm.response.code);",
+              "});",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+              "if (token) pm.collectionVariables.set('token', token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login (Annika)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+              "pm.test('Token present', function(){ pm.expect(!!token).to.be.true; });",
+              "pm.collectionVariables.set('token', token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Ad (Vokey SM9 Wedge)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads", "host": ["{{base_url}}"], "path": ["api", "ads"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Titleist Vokey Wedge\",\n  \"price\": 139.99,\n  \"condition\": \"like_new\",\n  \"description\": \"56° 12D grind, barely used, grooves are sharp.\",\n  \"end_date\": \"2030-12-31 23:59:59\",\n  \"category_id\": {{category_id}}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Create returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "const id = j.data?.ad_id || j.ad_id || j.id;",
+              "pm.collectionVariables.set('ad_id', String(id || ''));",
+              "pm.test('ad_id captured', function(){ pm.expect(pm.collectionVariables.get('ad_id')).to.not.eql(''); });",
+              "// Optional: check AI fields if enabled",
+              "if (j.data) {",
+              "  pm.expect(j.data).to.have.property('title');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Ads (search Vokey, like_new, paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/ads?price_min=50&price_max=500&category_id={{category_id}}&estado=como_nuevo&q=Vokey&per_page=5&mostrar_todos=false",
+          "host": ["{{base_url}}"],
+          "path": ["api", "ads"],
+          "query": [
+            { "key": "price_min", "value": "50" },
+            { "key": "price_max", "value": "500" },
+            { "key": "category_id", "value": "{{category_id}}" },
+            { "key": "estado", "value": "como_nuevo" },
+            { "key": "q", "value": "Vokey" },
+            { "key": "per_page", "value": "5" },
+            { "key": "mostrar_todos", "value": "0" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Get Ads returns 200', function () { pm.expect(pm.response.code).to.eql(200); });",
+              "let j = {}; try { j = pm.response.json(); } catch(e){}",
+              "pm.test('Has data array', function(){ pm.expect(j).to.have.property('data'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Ad (created one)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/ads/{{ad_id}}", "host": ["{{base_url}}"], "path": ["api", "ads", "{{ad_id}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Delete returns 200', function () { pm.expect(pm.response.code).to.eql(200); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout (Annika)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Logout returns 200/204', function () { pm.expect([200,204]).to.include(pm.response.code); });",
+              "pm.collectionVariables.unset('token');",
+              "pm.collectionVariables.unset('ad_id');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

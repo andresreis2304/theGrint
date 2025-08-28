@@ -8,7 +8,7 @@ class Anuncio extends Model
 {
     protected $table = 'anuncio';
     protected $primaryKey = 'anuncio_id';
-    public $timestamps = true; // we added created_at/updated_at
+    public $timestamps = true;
 
     protected $fillable = [
         'usuario_id', 'categoria_id',

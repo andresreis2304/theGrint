@@ -8,7 +8,7 @@ class StoreAnuncioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // handled by middleware
+        return true;
     }
 
     public function rules(): array
@@ -19,7 +19,6 @@ class StoreAnuncioRequest extends FormRequest
         ];
 
         return [
-            // Title: only A–Z, a–z and spaces
             'title' => ['required','regex:/^[A-Za-z ]+$/','max:500'],
             'price' => ['required','numeric','min:0'],
             'condition' => ['required','string', Rule::in([

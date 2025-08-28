@@ -58,7 +58,6 @@ class AdAiService
                 ]);
 
             if (!$resp->successful()) {
-                // \Log::warning('AI failed: '.$resp->body());
                 return ['valuation' => null, 'market_price' => null];
             }
 
@@ -72,7 +71,6 @@ class AdAiService
 
             return ['valuation' => $valuation, 'market_price' => $price];
         } catch (\Throwable $e) {
-            // \Log::error('AI error: '.$e->getMessage());
             return ['valuation' => null, 'market_price' => null];
         }
     }

@@ -49,7 +49,6 @@ class AuthController extends Controller
         $user = Usuario::where('email', strtolower($data['email']))->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            // 422 keeps it in the validation-ish family; 401 is also fine
             return response()->json(['message' => 'Invalid credentials'], 422);
         }
 
@@ -69,11 +68,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        // Revoke only the current token:
         $request->user()->currentAccessToken()?->delete();
-
-        // Or revoke all tokens:
-        // $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Logged out']);
     }
