@@ -1,145 +1,52 @@
 <?php
-
 namespace App\Http\Controllers;
-
+use App\Application\Ads\CreateAd;
+use App\Application\Ads\CancelAd;
+use App\Application\Ads\ListAds;
+use App\Application\Ads\DTO\CreateAdInput;
+use App\Application\Ads\DTO\ListAdsFilter;
+use App\Domain\Ads\Condition;
 use App\Http\Requests\StoreAnuncioRequest;
+use App\Http\Requests\Ads\IndexAdsRequest;
 use App\Http\Resources\AnuncioResource;
-use App\Models\Anuncio;
-use App\Models\Usuario;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use App\Services\AdAiService;
+use Illuminate\Http\JsonResponse;
 
-
-class AnuncioController extends Controller
+final class AnuncioController extends Controller
 {
-    public function store(StoreAnuncioRequest $request)
+    public function store(StoreAnuncioRequest $request, CreateAd $useCase): AnuncioResource
     {
-        $user = $request->user();
-        if (!$user instanceof Usuario) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
+        $u = $request->user();
         $data = $request->validated();
-
-        $conditionToEstado = [
-            'new' => 'nuevo',
-            'used' => 'usado',
-            'refurbished' => 'restaurado',
-            'like_new' => 'como_nuevo',
-        ];
-
-        $estado = $conditionToEstado[$data['condition']] ?? $data['condition'];
-
-        $ad = Anuncio::create([
-            'usuario_id'  => $user->usuario_id,
-            'categoria_id'=> $data['category_id'],
-            'titulo' => $data['title'],
-            'precio' => $data['price'],
-            'estado' => $estado, 
-            'descripcion' => $data['description'] ?? null,
-            'fecha_fin'   => \Illuminate\Support\Carbon::parse($data['end_date']),
-            'is_canceled' => 0,
-        ]);
-
-        try {
-            if (config('services.openai.key')) {
-                app(AdAiService::class)->enrichAndSave($ad);
-            }
-        } catch (\Throwable $e) {
-            \Log::warning('AI enrich failed: '.$e->getMessage());
-        }
-        $ad->refresh(); 
-
-        return (new AnuncioResource($ad))
-            ->response()
-            ->setStatusCode(201);
+        $ad = $useCase->handle(new CreateAdInput(
+            userId: $u->usuario_id,
+            categoryId: (int)$data['category_id'],
+            title: $data['title'],
+            price: (float)$data['price'],
+            estado: Condition::normalize($data['condition']),
+            description: $data['description'] ?? null,
+            endDate: \Illuminate\Support\Carbon::parse($data['end_date']),
+        ));
+        return new AnuncioResource($ad);
     }
 
-    public function destroy(Request $request, int $id)
+    public function destroy(int $id, CancelAd $useCase): JsonResponse
     {
-        $user = $request->user();
-        if (!$user instanceof Usuario) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
-        $ad = Anuncio::find($id);
-        if (!$ad) {
-            return response()->json(['message' => 'Ad not found'], 404);
-        }
-
-        if ($ad->usuario_id !== $user->usuario_id) {
-            return response()->json(['message' => 'Forbidden: not your ad'], 403);
-        }
-
-        $ad->is_canceled = true;
-        $ad->save();
-
-        return response()->json([
-            'message' => 'Ad canceled successfully',
-            'ad_id'   => $ad->anuncio_id,
-        ], 200);
+        $useCase->handle($id, auth()->user()->usuario_id);
+        return response()->json(['message' => 'Ad canceled successfully', 'ad_id' => $id]);
     }
 
-    public function index(Request $request)
+    public function index(IndexAdsRequest $request, ListAds $useCase)
     {
-        $data = $request->validate([
-        'price_min' => ['nullable','numeric','min:0'],
-        'price_max' => ['nullable','numeric','gte:price_min'],
-        'category_id' => ['nullable','string'],
-        'estado' => ['nullable','string'],
-        'q' => ['nullable','string'],
-        'mostrar_todos' => ['nullable','boolean'],
-        'per_page' => ['nullable','integer','min:1','max:100'],
-        ]);
-
-        $estadoMap = ['new' => 'nuevo', 'nuevo' => 'nuevo', 
-        'used' => 'usado', 'usado' => 'usado',
-        'refurbished' => 'restaurado', 'reacondicionado' => 'restaurado', 'restaurado' => 'restaurado',
-        'like_new' => 'como_nuevo', 'como_nuevo' => 'como_nuevo', 'como nuevo' => 'como_nuevo',];
-
-        $mostrarTodos = $request->boolean('mostrar_todos');
-
-        $ads = Anuncio::with(['usuario', 'categoria']);
-
-        if(!$mostrarTodos){
-            $ads->where('is_canceled', false)->where(function($sub){
-                $sub->whereNull('fecha_fin')->orWhere('fecha_fin', '>', now());
-            });
-        }
-        if (!empty($data['price_min'])) $ads->where('precio', '>=', (float)$data['price_min']);
-        if (!empty($data['price_max'])) $ads->where('precio', '<=', (float)$data['price_max']);
-
-        if (!empty($data['category_id'])) {
-            $ids = collect(explode(',', $data['category_id']))->map(fn($v)=>(int)trim($v))->filter()->values();
-            if ($ids->isNotEmpty()) $ads->whereIn('categoria_id', $ids);
-        }
-
-        if (!empty($data['estado'])) {
-            $key = mb_strtolower(trim($data['estado']));
-            $estado = $estadoMap[$key] ?? $key;
-            $ads->where('estado', $estado);
-        }
-        
-        if (!empty($data['q'])) {
-            $term = trim($data['q']);
-            $ads->where(function ($sub) use ($term) {
-                $sub->where('titulo', 'like', "%{$term}%")
-                    ->orWhere('descripcion', 'like', "%{$term}%");
-            });
-        }
-
-
-        if ($mostrarTodos) {
-            $ads->orderBy('precio', 'desc'); 
-        } else {
-            $ads->orderBy('created_at', 'asc'); 
-        }
-
-        $perPage = (int)($data['per_page'] ?? 10);
-        $perPage = max(1, min($perPage, 100));
-
-        $ads = $ads->paginate($perPage)->appends($data);
-        return AnuncioResource::collection($ads);
+        $v = $request->validated();
+        $result = $useCase->handle(new ListAdsFilter(
+            priceMin: $v['price_min'] ?? null,
+            priceMax: $v['price_max'] ?? null,
+            categoryIdCsv: $v['category_id'] ?? null,
+            estado: $v['estado'] ?? null,
+            q: $v['q'] ?? null,
+            mostrarTodos: (bool)($v['mostrar_todos'] ?? false),
+            perPage: (int)($v['per_page'] ?? 10),
+        ));
+        return AnuncioResource::collection($result);
     }
 }

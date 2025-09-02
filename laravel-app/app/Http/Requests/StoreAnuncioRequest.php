@@ -19,7 +19,7 @@ class StoreAnuncioRequest extends FormRequest
         ];
 
         return [
-            'title' => ['required','regex:/^[A-Za-z ]+$/','max:500'],
+            'title' => ['required','regex:/^[\pL\pN\-\s\+\#\.,\(\)]+$/u','max:500'],
             'price' => ['required','numeric','min:0'],
             'condition' => ['required','string', Rule::in([
                 'new','used','refurbished','like_new',
