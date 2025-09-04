@@ -25,7 +25,6 @@ final class CreateAd
             ]);
         });
 
-        // Queue AI enrichment (checks env internally)
         EnrichAdWithAiJob::dispatch($ad->anuncio_id);
         return $ad->fresh(['usuario','categoria']);
     }

@@ -7,7 +7,7 @@ final class ListAdsFilter
         public ?float $priceMin,
         public ?float $priceMax,
         public ?string $categoryIdCsv,
-        public ?string $estado,  // normalized or null
+        public ?string $estado,
         public ?string $q,
         public bool $mostrarTodos,
         public int $perPage

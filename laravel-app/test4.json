@@ -1,0 +1,187 @@
+{
+  "info": {
+    "name": "GolfAPI – Nelly Flow",
+    "_postman_id": "77777777-8888-9999-aaaa-bbbbbbbbbbbb",
+    "description": "Standalone collection for Nelly Korda flow (TaylorMade Spider Putter). Uses collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:9000" },
+    { "key": "category_id", "value": "6" },
+    { "key": "email3", "value": "nelly.korda@gmail.com" },
+    { "key": "password3", "value": "NellyR0cks123" },
+    { "key": "token3", "value": "" },
+    { "key": "ad_id_3", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Nelly Flow (TaylorMade Spider Putter)",
+      "item": [
+        {
+          "name": "Register (Nelly)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Nelly\",\n  \"last_name\": \"Korda\",\n  \"email\": \"{{email3}}\",\n  \"password\": \"{{password3}}\",\n  \"password_confirmation\": \"{{password3}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Register 201/422', function(){ pm.expect([201,422]).to.include(pm.response.code); });",
+                  "let j={}; try{ j=pm.response.json(); }catch(e){}",
+                  "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+                  "if (token) pm.collectionVariables.set('token3', token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Nelly)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email3}}\",\n  \"password\": \"{{password3}}\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+                  "let j={}; try{ j=pm.response.json(); }catch(e){}",
+                  "const token = j.token || j.plain_text_token || j.access_token || j.data?.token;",
+                  "pm.collectionVariables.set('token3', token);",
+                  "pm.test('token3 present', function(){ pm.expect(!!pm.collectionVariables.get('token3')).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Ad (TaylorMade Spider Putter, nuevo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token3}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/ads", "host": ["{{base_url}}"], "path": ["api", "ads"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"TaylorMade Spider Putter\",\n  \"price\": 249.00,\n  \"condition\": \"nuevo\",\n  \"description\": \"Brand new Spider putter with headcover.\",\n  \"end_date\": \"2031-12-31 23:59:59\",\n  \"category_id\": {{category_id}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create 201', function(){ pm.expect(pm.response.code).to.eql(201); });",
+                  "let j={}; try{ j=pm.response.json(); }catch(e){}",
+                  "const id = j.data?.ad_id || j.ad_id || j.id;",
+                  "pm.collectionVariables.set('ad_id_3', String(id || ''));",
+                  "pm.test('ad_id_3 captured', function(){ pm.expect(pm.collectionVariables.get('ad_id_3')).to.not.eql(''); });",
+                  "pm.test('Condition normalized', function(){ if(j.data){ pm.expect(['new','used','refurbished','like_new','nuevo','usado','restaurado','como_nuevo']).to.include(j.data.condition); } });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Ads (search Spider, estado nuevo)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Accept", "value": "application/json" } ],
+            "url": {
+              "raw": "{{base_url}}/api/ads?q=Spider&estado=nuevo&category_id={{category_id}}&per_page=3&mostrar_todos=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ads"],
+              "query": [
+                { "key": "q", "value": "Spider" },
+                { "key": "estado", "value": "nuevo" },
+                { "key": "category_id", "value": "{{category_id}}" },
+                { "key": "per_page", "value": "3" },
+                { "key": "mostrar_todos", "value": "0" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get Ads 200', function(){ pm.expect(pm.response.code).to.eql(200); });",
+                  "let j={}; try{ j=pm.response.json(); }catch(e){}",
+                  "pm.test('Has data array', function(){ pm.expect(j).to.have.property('data'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Ad (Nelly)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token3}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/ads/{{ad_id_3}}", "host": ["{{base_url}}"], "path": ["api", "ads", "{{ad_id_3}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [ "pm.test('Delete 200', function(){ pm.expect(pm.response.code).to.eql(200); });" ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout (Nelly)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token3}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logout 200/204', function(){ pm.expect([200,204]).to.include(pm.response.code); });",
+                  "pm.collectionVariables.unset('token3');",
+                  "pm.collectionVariables.unset('ad_id_3');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

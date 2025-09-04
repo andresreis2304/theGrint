@@ -3,7 +3,6 @@ namespace App\Domain\Ads;
 
 final class Condition
 {
-    // canonical values stored in DB (Spanish)
     public const NUEVO = 'nuevo';
     public const USADO = 'usado';
     public const RESTAURADO = 'restaurado';
